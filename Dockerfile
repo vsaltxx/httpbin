@@ -1,22 +1,42 @@
-FROM ubuntu:18.04
+FROM python:3.12-slim AS builder
 
-LABEL name="httpbin"
-LABEL version="0.9.2"
-LABEL description="A simple HTTP service."
-LABEL org.kennethreitz.vendor="Kenneth Reitz"
-
-ENV LC_ALL=C.UTF-8
-ENV LANG=C.UTF-8
-
-RUN apt update -y && apt install python3-pip git -y && pip3 install --no-cache-dir pipenv
-
-ADD Pipfile Pipfile.lock /httpbin/
 WORKDIR /httpbin
-RUN /bin/bash -c "pip3 install --no-cache-dir -r <(pipenv lock -r)"
 
-ADD . /httpbin
-RUN pip3 install --no-cache-dir /httpbin
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    build-essential \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 80
+RUN python3 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
 
-CMD ["gunicorn", "-b", "0.0.0.0:80", "httpbin:app", "-k", "gevent"]
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+COPY requirements.txt ./
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN pip install --no-cache-dir .
+
+RUN find /venv -type d -name "__pycache__" -prune -exec rm -rf {} + \
+    && find /venv -type f -name "*.pyc" -delete \
+    && find /venv -type f -name "*.pyo" -delete
+
+FROM python:3.12-slim AS runtime
+
+ENV PATH="/venv/bin:$PATH"
+
+WORKDIR /httpbin
+
+RUN useradd -u 1000 -m appuser
+
+COPY --from=builder /venv /venv
+COPY --from=builder /httpbin /httpbin
+
+USER 1000
+EXPOSE 8080
+
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "httpbin:app", "-k", "gevent"]

@@ -27,6 +27,14 @@ RUN find /venv -type d -name "__pycache__" -prune -exec rm -rf {} + \
 
 FROM python:3.12-slim AS runtime
 
+LABEL org.opencontainers.image.title="httpbin" \
+    org.opencontainers.image.version="0.9.2" \
+    org.opencontainers.image.description="A simple HTTP request and response service." \
+    org.opencontainers.image.vendor="vsaltxx" \
+    org.opencontainers.image.authors="Kenneth Reitz" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.source="https://github.com/vsaltxx/httpbin"
+
 ENV PATH="/venv/bin:$PATH"
 
 WORKDIR /httpbin

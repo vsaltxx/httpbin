@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir --no-deps .
 
 RUN find /venv -type d -name "__pycache__" -prune -exec rm -rf {} + \
     && find /venv -type f -name "*.pyc" -delete \
@@ -35,7 +35,9 @@ LABEL org.opencontainers.image.title="httpbin" \
     org.opencontainers.image.licenses="MIT" \
     org.opencontainers.image.source="https://github.com/vsaltxx/httpbin"
 
-ENV PATH="/venv/bin:$PATH"
+ENV PATH="/venv/bin:$PATH" \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
 
 WORKDIR /httpbin
 

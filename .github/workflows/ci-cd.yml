@@ -25,6 +25,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "requirements.txt"
 
       - name: Install ruff
         run: pip install ruff
@@ -62,3 +64,15 @@ jobs:
 
       - name: Bandit SAST scan
         run: bandit -r httpbin --severity-level medium
+
+  dependency-audit:
+    name: Audit dependencies with pip-audit
+    runs-on: ubuntu-22.04
+    needs: sast
+    steps:
+      - *checkout-step
+
+      - name: Run pip-audit
+        uses: pypa/gh-action-pip-audit@v1.1.0
+        with:
+          inputs: requirements.txt

@@ -435,7 +435,7 @@ def parse_multi_value_header(header_str):
     if header_str:
         parts = header_str.split(',')
         for part in parts:
-            match = re.search('\s*(W/)?\"?([^"]*)\"?\s*', part)
+            match = re.search(r'\s*(W/)?"?([^"]*)"?\s*', part)
             if match is not None:
                 parsed_parts.append(match.group(2))
     return parsed_parts
@@ -466,9 +466,18 @@ def digest_challenge_response(app, qop, algorithm, stale = False):
     ]), algorithm)
     opaque = H(os.urandom(10), algorithm)
 
-    auth = WWWAuthenticate("digest")
-    auth.set_digest('me@kennethreitz.com', nonce, opaque=opaque,
-                    qop=('auth', 'auth-int') if qop is None else (qop,), algorithm=algorithm)
-    auth.stale = stale
-    response.headers['WWW-Authenticate'] = auth.to_header()
+    qop_values = ('auth', 'auth-int') if qop is None else (qop,)
+
+    header_parts = [
+        'Digest realm="me@kennethreitz.com"',
+        'nonce="{}"'.format(nonce),
+        'opaque="{}"'.format(opaque),
+        'algorithm={}'.format(algorithm),
+        'qop="{}"'.format(','.join(qop_values)),
+    ]
+
+    if stale:
+        header_parts.append('stale=TRUE')
+
+    response.headers['WWW-Authenticate'] = ', '.join(header_parts)
     return response

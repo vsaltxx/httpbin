@@ -9,3 +9,6 @@ dist/
 *.egg-info
 *.swp
 .vscode/
+.venv/
+venv/
+*.txt

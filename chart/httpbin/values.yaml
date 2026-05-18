@@ -1,0 +1,42 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/vsaltxx/httpbin
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+config:
+  trackingCode: local-dev
+
+secret:
+  name: httpbin-secret
+  key: HTTPBIN_SECRET_KEY
+
+resources:
+  requests:
+    cpu: 100m
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+networkPolicy:
+  enabled: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

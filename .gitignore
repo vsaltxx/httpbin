@@ -9,3 +9,9 @@ dist/
 *.egg-info
 *.swp
 .vscode/
+.venv/
+venv/
+*.txt
+.pytest_cache/
+.ruff_cache
+__pycache__

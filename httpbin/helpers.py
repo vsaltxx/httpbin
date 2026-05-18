@@ -13,7 +13,7 @@ import re
 import time
 import os
 from hashlib import md5, sha256, sha512
-from werkzeug.http import parse_authorization_header
+from werkzeug.datastructures import Authorization
 from werkzeug.datastructures import WWWAuthenticate
 
 from flask import request, make_response
@@ -272,7 +272,7 @@ def H(data, algorithm):
     elif algorithm == 'SHA-512':
         return sha512(data).hexdigest()
     else:
-        return md5(data).hexdigest()
+        return md5(data, usedforsecurity=False).hexdigest()
 
 
 def HA1(realm, username, password, algorithm):
@@ -356,7 +356,7 @@ def check_digest_auth(user, passwd):
     """Check user authentication using HTTP Digest auth"""
 
     if request.headers.get('Authorization'):
-        credentials = parse_authorization_header(request.headers.get('Authorization'))
+        credentials = Authorization.from_header(request.headers.get('Authorization'))
         if not credentials:
             return
         request_uri = request.script_root + request.path
@@ -435,7 +435,7 @@ def parse_multi_value_header(header_str):
     if header_str:
         parts = header_str.split(',')
         for part in parts:
-            match = re.search('\s*(W/)?\"?([^"]*)\"?\s*', part)
+            match = re.search(r'\s*(W/)?"?([^"]*)"?\s*', part)
             if match is not None:
                 parsed_parts.append(match.group(2))
     return parsed_parts
@@ -466,9 +466,18 @@ def digest_challenge_response(app, qop, algorithm, stale = False):
     ]), algorithm)
     opaque = H(os.urandom(10), algorithm)
 
-    auth = WWWAuthenticate("digest")
-    auth.set_digest('me@kennethreitz.com', nonce, opaque=opaque,
-                    qop=('auth', 'auth-int') if qop is None else (qop,), algorithm=algorithm)
-    auth.stale = stale
-    response.headers['WWW-Authenticate'] = auth.to_header()
+    qop_values = ('auth', 'auth-int') if qop is None else (qop,)
+
+    header_parts = [
+        'Digest realm="me@kennethreitz.com"',
+        'nonce="{}"'.format(nonce),
+        'opaque="{}"'.format(opaque),
+        'algorithm={}'.format(algorithm),
+        'qop="{}"'.format(','.join(qop_values)),
+    ]
+
+    if stale:
+        header_parts.append('stale=TRUE')
+
+    response.headers['WWW-Authenticate'] = ', '.join(header_parts)
     return response

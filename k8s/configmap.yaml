@@ -1,0 +1,6 @@
+apiVersion: v1
+data:
+  HTTPBIN_TRACKING_CODE: local-dev
+kind: ConfigMap
+metadata:
+  name: httpbin-config

@@ -94,7 +94,6 @@ jobs:
     name: Build and push image to GHCR
     runs-on: ubuntu-22.04
     needs: secret-scan
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
       - *checkout-step
 
@@ -126,7 +125,6 @@ jobs:
     name: Scan image with Trivy
     runs-on: ubuntu-22.04
     needs: build-and-push
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
